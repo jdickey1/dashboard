@@ -53,9 +53,10 @@ get_attach_cmd() {
     local type="$3"
 
     if [[ "$type" == "remote" ]]; then
-        echo "ssh $host -t 'bash -l -c \"tmux attach -t $name\"' || { echo 'Session $name not found'; read -p 'Press enter to retry...'; exec bash -c \"\$0\"; }"
+        echo "ssh $host -t 'bash -l -c \"tmux attach -t $name\"' || { echo 'Session $name not found on $host'; sleep 3; }"
     else
-        echo "tmux attach -t $name || { echo 'Session $name not found'; read -p 'Press enter to retry...'; exec bash -c \"\$0\"; }"
+        # Unset TMUX to allow nested session attachment
+        echo "TMUX= tmux attach -t $name || { echo 'Session $name not found'; sleep 3; }"
     fi
 }
 
