@@ -2,31 +2,31 @@
   "sessions": [
     {
       "name": "claude-mini1",
-      "host": "m1-mac-mini",
+      "host": "james@m1-mac-mini",
       "type": "remote",
       "description": "Mac Mini Claude #1"
     },
     {
       "name": "claude-mini2",
-      "host": "m1-mac-mini",
+      "host": "james@m1-mac-mini",
       "type": "remote",
       "description": "Mac Mini Claude #2"
     },
     {
       "name": "claude-mini3",
-      "host": "m1-mac-mini",
+      "host": "james@m1-mac-mini",
       "type": "remote",
       "description": "Mac Mini Claude #3"
     },
     {
       "name": "claude-mini4",
-      "host": "m1-mac-mini",
+      "host": "james@m1-mac-mini",
       "type": "remote",
       "description": "Mac Mini Claude #4"
     },
     {
       "name": "claude-mini5",
-      "host": "m1-mac-mini",
+      "host": "james@m1-mac-mini",
       "type": "remote",
       "description": "Mac Mini Claude #5"
     },

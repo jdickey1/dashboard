@@ -49,7 +49,7 @@ FIRST_HOST=$(jq -r '.sessions[0].host' "$CONFIG_FILE")
 FIRST_TYPE=$(jq -r '.sessions[0].type' "$CONFIG_FILE")
 
 if [[ "$FIRST_TYPE" == "remote" ]]; then
-    tmux new-session -d -s "$SESSION_NAME" -n main "ssh $FIRST_HOST -t 'tmux attach -t $FIRST_SESSION 2>/dev/null || echo \"Session $FIRST_SESSION not found on $FIRST_HOST\" && sleep 5'"
+    tmux new-session -d -s "$SESSION_NAME" -n main "ssh $FIRST_HOST -t 'bash -l -c \"tmux attach -t $FIRST_SESSION\"' 2>/dev/null || echo \"Session $FIRST_SESSION not found on $FIRST_HOST\" && sleep 5"
 else
     tmux new-session -d -s "$SESSION_NAME" -n main "tmux attach -t $FIRST_SESSION 2>/dev/null || echo \"Session $FIRST_SESSION not found\" && sleep 5"
 fi
@@ -79,9 +79,9 @@ for ((i=1; i<SESSIONS; i++)); do
 
     # Get the new pane and set its command
     if [[ "$TYPE" == "remote" ]]; then
-        tmux send-keys -t "$SESSION_NAME:main.$i" "ssh $HOST -t 'tmux attach -t $NAME 2>/dev/null || echo \"Session $NAME not found on $HOST\" && sleep 5'" Enter
+        tmux send-keys -t "$SESSION_NAME:main.$i" "ssh $HOST -t 'bash -l -c \"tmux attach -t $NAME\"' || echo 'Session $NAME not found on $HOST' && sleep 5" Enter
     else
-        tmux send-keys -t "$SESSION_NAME:main.$i" "tmux attach -t $NAME 2>/dev/null || echo \"Session $NAME not found\" && sleep 5" Enter
+        tmux send-keys -t "$SESSION_NAME:main.$i" "tmux attach -t $NAME 2>/dev/null || echo 'Session $NAME not found' && sleep 5" Enter
     fi
 
     # Set pane title
