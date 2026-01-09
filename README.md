@@ -26,14 +26,38 @@ A tmux-based dashboard for monitoring and interacting with multiple Claude Code 
 
 ## Requirements
 
-- **tmux** (tested with 3.0+)
+### Local Machine (where you run Mission Control)
+
+- **tmux** 3.0+
 - **jq** (JSON processor)
 - **bash** 4.0+
-- **SSH access** to remote hosts (for remote sessions only)
+- **SSH access** to remote hosts (for remote sessions)
+
+### Remote Machines (for remote sessions only)
+
+- **tmux** installed and accessible in PATH
+- **SSH server** with key-based authentication (recommended)
+- Target tmux sessions must already exist
+
+### Installing Dependencies
+
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install tmux jq
+
+# macOS (Homebrew)
+brew install tmux jq
+```
+
+**Note for macOS**: Homebrew installs tmux to `/opt/homebrew/bin/`. For remote sessions to work, ensure tmux is in PATH for non-interactive SSH shells by adding to `~/.bashrc` or `~/.zshrc`:
+
+```bash
+export PATH="/opt/homebrew/bin:$PATH"
+```
 
 ### Recommended tmux Configuration
 
-Add to `/etc/tmux.conf` or `~/.tmux.conf`:
+Add to `/etc/tmux.conf` or `~/.tmux.conf` on all machines:
 
 ```bash
 # Start window/pane numbering at 1 (easier keyboard navigation)
@@ -179,14 +203,21 @@ Your terminal is too narrow for 3 horizontal panes. The script creates sessions 
 
 ### Remote session not connecting
 
-1. Verify SSH access:
+1. Verify SSH access works:
    ```bash
    ssh user@host -t 'tmux list-sessions'
    ```
 
-2. Ensure tmux is in PATH on the remote host (add to `~/.bashrc` if needed):
+2. If you get "tmux: command not found", ensure tmux is in PATH for non-interactive shells. Add to `~/.bashrc` on the remote host:
    ```bash
-   export PATH="/opt/homebrew/bin:$PATH"  # For macOS with Homebrew
+   export PATH="/opt/homebrew/bin:$PATH"  # macOS with Homebrew
+   # or
+   export PATH="/usr/local/bin:$PATH"     # Linux custom install
+   ```
+
+3. Verify the target session exists on the remote host:
+   ```bash
+   ssh user@host 'tmux has-session -t session-name && echo exists'
    ```
 
 ### Session directories not accessible
