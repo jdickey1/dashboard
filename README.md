@@ -1,54 +1,67 @@
-# Dashboard
+# Mission Control for Claude Code
 
-Mission control for Claude Code tmux sessions. View and interact with multiple Claude instances from a single screen.
+A tmux-based dashboard for monitoring and interacting with multiple Claude Code sessions across local and remote machines. View all your Claude instances in a single, paginated grid interface.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ MISSION CONTROL                                                  │
-├────────────────────────┬────────────────────────┬───────────────┤
-│ 🟢 mini1: Refactoring  │ 🟡 jdkey: Needs input  │ ⚪ obsidian   │
-│                        │                        │               │
-│ $ claude               │ $ claude               │ $ _           │
-│ > Working on auth...   │ ? Enter API key:       │               │
-│                        │                        │               │
-├────────────────────────┼────────────────────────┼───────────────┤
-│ 🟢 mini2: Running tests│ 🟢 agents: Deploying   │ 🔴 nonroot    │
-│                        │                        │               │
-│ $ claude               │ $ claude               │ Build failed  │
-│ > npm test...          │ > pm2 reload...        │               │
-│                        │                        │               │
-└────────────────────────┴────────────────────────┴───────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MISSION CONTROL                              [1/6] agents jdkey link        │
+├───────────────────────────┬───────────────────────────┬─────────────────────┤
+│ claude-agents             │ claude-jdkey              │ claude-link         │
+│                           │                           │                     │
+│ $ claude                  │ $ claude                  │ $ claude            │
+│ > Deploying service...    │ > Running tests...        │ > Building...       │
+│                           │                           │                     │
+├───────────────────────────┴───────────────────────────┴─────────────────────┤
+│                        Ctrl-b n/p: pages | 04:30                            │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Features
 
-- **Grid view** of all Claude Code sessions (local and remote)
-- **Status indicators**: 🟢 working, 🟡 waiting for input, ⚪ idle, 🔴 error
-- **Interactive**: Click into any pane to interact with that session
-- **Cross-machine**: Monitor sessions on remote hosts via SSH
+- **Paginated grid view**: 3 sessions per page, navigate with `Ctrl-b n/p`
+- **Local & remote sessions**: Monitor tmux sessions on the same machine or via SSH
+- **Direct interaction**: Click into any pane to interact with that Claude instance
+- **Session setup script**: Automatically create all your tmux sessions
+- **Configurable**: Define your sessions in a simple JSON config file
 
-## Quick Start
+## Requirements
 
-1. **Clone the repo**:
+- **tmux** (tested with 3.0+)
+- **jq** (JSON processor)
+- **bash** 4.0+
+- **SSH access** to remote hosts (for remote sessions only)
+
+### Recommended tmux Configuration
+
+Add to `/etc/tmux.conf` or `~/.tmux.conf`:
+
+```bash
+# Start window/pane numbering at 1 (easier keyboard navigation)
+set -g base-index 1
+setw -g pane-base-index 1
+
+# Enable mouse support for pane selection
+set -g mouse on
+```
+
+## Installation
+
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/jdickey1/dashboard.git
    cd dashboard
    ```
 
-2. **Configure your sessions**:
+2. **Create your configuration**:
    ```bash
    cp config.example.json config.json
-   # Edit config.json with your tmux session names
    ```
 
-3. **Install the hooks**:
+3. **Edit `config.json`** with your sessions (see Configuration below)
+
+4. **(Optional) Install Claude Code hooks** for status updates:
    ```bash
    ./install.sh
-   ```
-
-4. **Start Mission Control**:
-   ```bash
-   ./scripts/mission-control.sh
    ```
 
 ## Configuration
@@ -59,129 +72,165 @@ Edit `config.json` to define your sessions:
 {
   "sessions": [
     {
-      "name": "mini1",
-      "host": "macmini",
-      "type": "remote",
-      "description": "Mac Mini Claude instance"
-    },
-    {
-      "name": "jdkey",
+      "name": "claude-project1",
       "host": "localhost",
       "type": "local",
-      "description": "jdkey.com project"
+      "description": "My first project"
+    },
+    {
+      "name": "claude-remote1",
+      "host": "user@remote-server",
+      "type": "remote",
+      "description": "Remote Claude instance"
     }
   ],
   "layout": {
-    "columns": 3
+    "columns": 3,
+    "show_status_bar": true
   }
 }
 ```
 
 ### Session Types
 
-- **local**: Attaches to a tmux session on the same machine
-- **remote**: SSHs to the host and attaches to the tmux session there
+| Type | Description |
+|------|-------------|
+| `local` | Attaches to a tmux session on the current machine |
+| `remote` | SSHs to the specified host and attaches to the tmux session |
 
-## Claude Code Hooks
+### Session Naming Convention
 
-The hooks automatically update the dashboard when Claude's status changes:
-
-| Event | Status | Trigger |
-|-------|--------|---------|
-| `UserPromptSubmit` | 🟢 working | User sends a prompt |
-| `Stop` | ⚪ idle | Claude finishes responding |
-| `PreToolUse:AskUserQuestion` | 🟡 waiting | Claude asks a question |
-
-### Manual Hook Installation
-
-If the automatic installation doesn't work, add these hooks to `~/.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [{"type": "command", "command": "~/.local/share/dashboard/hooks/on-prompt-submit.sh"}]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [{"type": "command", "command": "~/.local/share/dashboard/hooks/on-stop.sh"}]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "AskUserQuestion",
-        "hooks": [{"type": "command", "command": "~/.local/share/dashboard/hooks/on-waiting.sh"}]
-      }
-    ]
-  }
-}
-```
+We recommend prefixing all session names with `claude-` for consistency:
+- `claude-myproject`
+- `claude-server1`
+- `claude-admin`
 
 ## Usage
 
+### Creating Sessions
+
+Before launching Mission Control, create your tmux sessions:
+
+```bash
+# Create sessions manually
+tmux new-session -d -s claude-myproject -c /path/to/project
+
+# Or use the setup script (edit it first with your sessions)
+./scripts/setup-vps-sessions.sh
+```
+
+### Launching Mission Control
+
+```bash
+./scripts/mission-control.sh
+```
+
+Or with a custom config:
+
+```bash
+./scripts/mission-control.sh /path/to/config.json
+```
+
 ### Navigation
 
-- **Switch panes**: `Ctrl-b` then arrow keys (or click with mouse)
-- **Zoom pane**: `Ctrl-b z` (toggle fullscreen for current pane)
-- **Detach**: `Ctrl-b d`
+| Key | Action |
+|-----|--------|
+| `Ctrl-b n` | Next page |
+| `Ctrl-b p` | Previous page |
+| `Ctrl-b 0-9` | Jump to page number |
+| Arrow keys | Move between panes on current page |
+| `Ctrl-b z` | Zoom/unzoom current pane (fullscreen) |
+| `Ctrl-b d` | Detach from Mission Control |
+| Mouse click | Select a pane (if mouse mode enabled) |
 
 ### Interacting with Sessions
 
-Just click into a pane and type! You're directly connected to that tmux session.
+Click or navigate to any pane and start typing - you're directly connected to that Claude Code session.
 
-Common commands:
-- `/clear` - Clear conversation and start fresh
-- `Ctrl-c` - Cancel current operation
-- Type any prompt to continue working
+## Scripts
 
-## Requirements
+| Script | Purpose |
+|--------|---------|
+| `scripts/mission-control.sh` | Main dashboard launcher |
+| `scripts/setup-vps-sessions.sh` | Create tmux sessions (customize for your setup) |
+| `install.sh` | Install Claude Code hooks for status updates |
 
-- tmux
-- jq
-- SSH access to remote hosts (for remote sessions)
-- Claude Code with hooks support
+## Claude Code Hooks (Optional)
+
+The hooks system can automatically update session status indicators:
+
+| Event | Status | Trigger |
+|-------|--------|---------|
+| `UserPromptSubmit` | Working | User sends a prompt |
+| `Stop` | Idle | Claude finishes responding |
+| `PreToolUse:AskUserQuestion` | Waiting | Claude asks a question |
+
+Install hooks with `./install.sh` or manually add them to `~/.claude/settings.json`.
+
+## Troubleshooting
+
+### "can't find window: 0"
+
+This occurs when the tmux server isn't running and `base-index` defaults to 0 instead of your configured value. The script handles this automatically by running `tmux start-server` first.
+
+### "no space for new pane"
+
+Your terminal is too narrow for 3 horizontal panes. The script creates sessions with a minimum size of 200x50 to prevent this. Make sure your terminal is at least 60 columns wide when attaching.
+
+### Remote session not connecting
+
+1. Verify SSH access:
+   ```bash
+   ssh user@host -t 'tmux list-sessions'
+   ```
+
+2. Ensure tmux is in PATH on the remote host (add to `~/.bashrc` if needed):
+   ```bash
+   export PATH="/opt/homebrew/bin:$PATH"  # For macOS with Homebrew
+   ```
+
+### Session directories not accessible
+
+If setup-vps-sessions.sh reports directories not found, ensure the user running the script has execute permission on parent directories:
+
+```bash
+sudo chmod o+x /home/username
+```
+
+### Sessions disconnecting immediately
+
+The target tmux session must exist before Mission Control can attach:
+
+```bash
+# Check if session exists
+tmux has-session -t claude-myproject 2>/dev/null && echo "exists" || echo "not found"
+
+# Create it if needed
+tmux new-session -d -s claude-myproject
+```
 
 ## File Structure
 
 ```
 dashboard/
-├── config.json              # Your session configuration
+├── config.json              # Your session configuration (git-ignored)
 ├── config.example.json      # Example configuration
-├── install.sh               # Installation script
+├── install.sh               # Hook installation script
 ├── scripts/
-│   └── mission-control.sh   # Main tmux grid launcher
+│   ├── mission-control.sh   # Main dashboard launcher
+│   └── setup-vps-sessions.sh # Session creation helper
 └── hooks/
-    ├── update-status.sh     # Core status update logic
-    ├── on-prompt-submit.sh  # Hook: user submitted prompt
-    ├── on-stop.sh           # Hook: Claude finished
-    └── on-waiting.sh        # Hook: Claude needs input
+    └── claude-hooks.json    # Claude Code hook definitions
 ```
 
-## Troubleshooting
+## Contributing
 
-### Session not found
-Make sure the tmux session exists before starting Mission Control:
-```bash
-tmux new-session -d -s mysession
-```
-
-### Remote session not connecting
-Check SSH access:
-```bash
-ssh macmini -t 'tmux list-sessions'
-```
-
-### Hooks not firing
-Verify hooks are installed:
-```bash
-ls ~/.local/share/dashboard/hooks/
-cat ~/.claude/settings.json | jq '.hooks'
-```
+Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ## License
 
-MIT
+MIT License - see LICENSE file for details.
+
+## Acknowledgments
+
+Built for managing multiple [Claude Code](https://claude.ai/claude-code) instances across development environments.

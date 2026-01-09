@@ -1,5 +1,18 @@
-  config.json
-  *.bak*
-  node_modules/
-  .DS_Store
-  EOF
+# Local configuration (contains user-specific settings)
+config.json
+config.json.local
+*.local
+
+# Backup files
+*.bak
+*.bak[0-9]
+
+# Node modules
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Status files
+/tmp/dashboard-status.json

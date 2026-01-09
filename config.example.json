@@ -1,34 +1,22 @@
 {
   "sessions": [
     {
-      "name": "mini1",
-      "host": "macmini",
+      "name": "claude-project1",
+      "host": "localhost",
+      "type": "local",
+      "description": "Local project session"
+    },
+    {
+      "name": "claude-project2",
+      "host": "localhost",
+      "type": "local",
+      "description": "Another local project"
+    },
+    {
+      "name": "claude-remote1",
+      "host": "user@remote-server",
       "type": "remote",
-      "description": "Mac Mini Claude instance 1"
-    },
-    {
-      "name": "mini2",
-      "host": "macmini",
-      "type": "remote",
-      "description": "Mac Mini Claude instance 2"
-    },
-    {
-      "name": "jdkey",
-      "host": "localhost",
-      "type": "local",
-      "description": "jdkey.com project"
-    },
-    {
-      "name": "agents",
-      "host": "localhost",
-      "type": "local",
-      "description": "Agents project"
-    },
-    {
-      "name": "obsidian",
-      "host": "localhost",
-      "type": "local",
-      "description": "Obsidian vault automation"
+      "description": "Remote server Claude instance"
     }
   ],
   "layout": {
