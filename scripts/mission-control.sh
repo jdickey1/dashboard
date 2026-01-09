@@ -60,6 +60,10 @@ get_attach_cmd() {
     fi
 }
 
+# Ensure tmux server is running (loads config) before querying options
+# This prevents BASE_INDEX=0 fallback when no server exists after kill-server
+tmux start-server 2>/dev/null || true
+
 # Get tmux base-index (windows and panes start at this number)
 BASE_INDEX=$(tmux show-option -gv base-index 2>/dev/null || echo "0")
 PANE_BASE=$(tmux show-option -gv pane-base-index 2>/dev/null || echo "0")
@@ -96,7 +100,7 @@ for ((page=0; page<TOTAL_PAGES; page++)); do
 
     if [[ $page -eq 0 ]]; then
         # Create session with first window
-        tmux new-session -d -s "$SESSION_NAME" -n "$window_name" "$FIRST_CMD"
+        tmux new-session -d -s "$SESSION_NAME" -x 200 -y 50 -n "$window_name" "$FIRST_CMD"
     else
         # Create new window
         tmux new-window -t "$SESSION_NAME" -n "$window_name" "$FIRST_CMD"

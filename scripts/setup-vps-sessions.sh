@@ -9,22 +9,25 @@ set -e
 
 echo "Creating VPS tmux sessions..."
 
-# Define sessions with their working directories
+# Define sessions with their working directories (alphabetical order)
 declare -A SESSIONS=(
-    ["nonrootadmin"]="/home/nonrootadmin"
-    ["jdkey"]="/home/jdkey/app"
-    ["planter"]="/home/planter/app"
-    ["sharper"]="/home/sharper/app"
-    ["winning"]="/home/winning/app"
-    ["podstyle"]="/home/podstyle/apps/web"
-    ["vidpub"]="/home/vidpub/apps/web"
-    ["link"]="/home/link/apps/web"
-    ["tru"]="/home/tru/apps/web"
-    ["agents"]="/home/agents/app"
-    ["obsidian"]="/home/obsidian"
+    ["claude-agents"]="/home/agents/app"
+    ["claude-jdkey"]="/home/jdkey/app"
+    ["claude-link"]="/home/link/apps/web"
+    ["claude-nonrootadmin"]="/home/nonrootadmin"
+    ["claude-obsidian"]="/home/obsidian"
+    ["claude-planter"]="/home/planter/app"
+    ["claude-podstyle"]="/home/podstyle/apps/web"
+    ["claude-sharper"]="/home/sharper/app"
+    ["claude-tru"]="/home/tru/apps/web"
+    ["claude-vidpub"]="/home/vidpub/apps/web"
+    ["claude-winning"]="/home/winning/app"
 )
 
-for session in "${!SESSIONS[@]}"; do
+# Sort keys alphabetically
+IFS=$'\n' sorted_keys=($(sort <<<"${!SESSIONS[*]}")); unset IFS
+
+for session in "${sorted_keys[@]}"; do
     dir="${SESSIONS[$session]}"
 
     # Check if session already exists
