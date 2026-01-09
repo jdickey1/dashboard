@@ -11,13 +11,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${1:-$SCRIPT_DIR/../config.json}"
 SESSION_NAME="mission-control"
 
-# Colors for status
-COLOR_WORKING="green"
-COLOR_WAITING="yellow"
-COLOR_IDLE="white"
-COLOR_ERROR="red"
-COLOR_OFFLINE="colour240"  # gray
-
 # Check dependencies
 command -v tmux >/dev/null 2>&1 || { echo "tmux is required but not installed."; exit 1; }
 command -v jq >/dev/null 2>&1 || { echo "jq is required but not installed."; exit 1; }
@@ -43,65 +36,68 @@ echo "Starting Mission Control with $SESSIONS sessions in $COLUMNS columns..."
 # Kill existing mission control session if it exists
 tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
 
+# Function to get attach command for a session
+get_attach_cmd() {
+    local name="$1"
+    local host="$2"
+    local type="$3"
+
+    if [[ "$type" == "remote" ]]; then
+        echo "ssh $host -t 'bash -l -c \"tmux attach -t $name\"' || { echo 'Session $name not found'; sleep 10; }"
+    else
+        echo "tmux attach -t $name || { echo 'Session $name not found'; sleep 10; }"
+    fi
+}
+
 # Create new session with first pane
-FIRST_SESSION=$(jq -r '.sessions[0].name' "$CONFIG_FILE")
+FIRST_NAME=$(jq -r '.sessions[0].name' "$CONFIG_FILE")
 FIRST_HOST=$(jq -r '.sessions[0].host' "$CONFIG_FILE")
 FIRST_TYPE=$(jq -r '.sessions[0].type' "$CONFIG_FILE")
+FIRST_CMD=$(get_attach_cmd "$FIRST_NAME" "$FIRST_HOST" "$FIRST_TYPE")
 
-if [[ "$FIRST_TYPE" == "remote" ]]; then
-    tmux new-session -d -s "$SESSION_NAME" -n main "ssh $FIRST_HOST -t 'bash -l -c \"tmux attach -t $FIRST_SESSION\"' 2>/dev/null || echo \"Session $FIRST_SESSION not found on $FIRST_HOST\" && sleep 5"
-else
-    tmux new-session -d -s "$SESSION_NAME" -n main "tmux attach -t $FIRST_SESSION 2>/dev/null || echo \"Session $FIRST_SESSION not found\" && sleep 5"
-fi
-
-# Set first pane title
-tmux select-pane -t "$SESSION_NAME:main.0" -T "$FIRST_SESSION"
+tmux new-session -d -s "$SESSION_NAME" -n main "$FIRST_CMD"
 
 # Create remaining panes
 for ((i=1; i<SESSIONS; i++)); do
     NAME=$(jq -r ".sessions[$i].name" "$CONFIG_FILE")
     HOST=$(jq -r ".sessions[$i].host" "$CONFIG_FILE")
     TYPE=$(jq -r ".sessions[$i].type" "$CONFIG_FILE")
+    CMD=$(get_attach_cmd "$NAME" "$HOST" "$TYPE")
 
-    # Determine split direction based on layout
-    ROW=$((i / COLUMNS))
-    COL=$((i % COLUMNS))
+    # Just keep splitting - tmux tiled layout will organize them
+    tmux split-window -t "$SESSION_NAME:main" "$CMD"
 
-    if [[ $COL -eq 0 ]]; then
-        # New row - split horizontally from the first pane of previous row
-        SPLIT_TARGET="$SESSION_NAME:main.$((i - COLUMNS))"
-        tmux split-window -t "$SPLIT_TARGET" -v
-    else
-        # Same row - split vertically from previous pane
-        SPLIT_TARGET="$SESSION_NAME:main.$((i - 1))"
-        tmux split-window -t "$SPLIT_TARGET" -h
-    fi
-
-    # Get the new pane and set its command
-    if [[ "$TYPE" == "remote" ]]; then
-        tmux send-keys -t "$SESSION_NAME:main.$i" "ssh $HOST -t 'bash -l -c \"tmux attach -t $NAME\"' || echo 'Session $NAME not found on $HOST' && sleep 5" Enter
-    else
-        tmux send-keys -t "$SESSION_NAME:main.$i" "tmux attach -t $NAME 2>/dev/null || echo 'Session $NAME not found' && sleep 5" Enter
-    fi
-
-    # Set pane title
-    tmux select-pane -t "$SESSION_NAME:main.$i" -T "$NAME"
+    # Re-tile after each split to prevent "no space for new pane" error
+    tmux select-layout -t "$SESSION_NAME:main" tiled
 done
 
 # Enable pane titles and borders
 tmux set-option -t "$SESSION_NAME" pane-border-status top
-tmux set-option -t "$SESSION_NAME" pane-border-format "#{?pane_active,#[reverse],} #T #{?pane_active,#[noreverse],}"
+tmux set-option -t "$SESSION_NAME" pane-border-format " #{pane_index}: #T "
+tmux set-option -t "$SESSION_NAME" pane-border-style "fg=colour240"
+tmux set-option -t "$SESSION_NAME" pane-active-border-style "fg=cyan"
 
-# Balance the layout
+# Set pane titles
+for ((i=0; i<SESSIONS; i++)); do
+    NAME=$(jq -r ".sessions[$i].name" "$CONFIG_FILE")
+    tmux select-pane -t "$SESSION_NAME:main.$i" -T "$NAME" 2>/dev/null || true
+done
+
+# Final layout adjustment
 tmux select-layout -t "$SESSION_NAME:main" tiled
 
 # Set up status bar
 tmux set-option -t "$SESSION_NAME" status on
+tmux set-option -t "$SESSION_NAME" status-style "bg=colour235,fg=white"
 tmux set-option -t "$SESSION_NAME" status-position bottom
 tmux set-option -t "$SESSION_NAME" status-left "#[fg=cyan,bold] MISSION CONTROL #[default]"
-tmux set-option -t "$SESSION_NAME" status-right "#[fg=white]%H:%M:%S #[default]"
+tmux set-option -t "$SESSION_NAME" status-left-length 20
+tmux set-option -t "$SESSION_NAME" status-right "#[fg=yellow]$SESSIONS sessions #[fg=white]| %H:%M:%S "
 tmux set-option -t "$SESSION_NAME" status-interval 1
+
+# Select first pane
+tmux select-pane -t "$SESSION_NAME:main.0"
 
 # Attach to the session
 echo "Attaching to Mission Control..."
-tmux attach -t "$SESSION_NAME"
+exec tmux attach -t "$SESSION_NAME"
