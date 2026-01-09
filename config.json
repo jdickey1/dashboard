@@ -1,0 +1,105 @@
+{
+  "sessions": [
+    {
+      "name": "claude-mini1",
+      "host": "m1-mac-mini",
+      "type": "remote",
+      "description": "Mac Mini Claude #1"
+    },
+    {
+      "name": "claude-mini2",
+      "host": "m1-mac-mini",
+      "type": "remote",
+      "description": "Mac Mini Claude #2"
+    },
+    {
+      "name": "claude-mini3",
+      "host": "m1-mac-mini",
+      "type": "remote",
+      "description": "Mac Mini Claude #3"
+    },
+    {
+      "name": "claude-mini4",
+      "host": "m1-mac-mini",
+      "type": "remote",
+      "description": "Mac Mini Claude #4"
+    },
+    {
+      "name": "claude-mini5",
+      "host": "m1-mac-mini",
+      "type": "remote",
+      "description": "Mac Mini Claude #5"
+    },
+    {
+      "name": "nonrootadmin",
+      "host": "localhost",
+      "type": "local",
+      "description": "VPS admin"
+    },
+    {
+      "name": "jdkey",
+      "host": "localhost",
+      "type": "local",
+      "description": "jdkey.com"
+    },
+    {
+      "name": "planter",
+      "host": "localhost",
+      "type": "local",
+      "description": "linkplanter.com"
+    },
+    {
+      "name": "sharper",
+      "host": "localhost",
+      "type": "local",
+      "description": "sharperstories.com"
+    },
+    {
+      "name": "winning",
+      "host": "localhost",
+      "type": "local",
+      "description": "winningonissues.com"
+    },
+    {
+      "name": "podstyle",
+      "host": "localhost",
+      "type": "local",
+      "description": "podstylevideo.com"
+    },
+    {
+      "name": "vidpub",
+      "host": "localhost",
+      "type": "local",
+      "description": "vidpublish.com"
+    },
+    {
+      "name": "link",
+      "host": "localhost",
+      "type": "local",
+      "description": "link2s.com"
+    },
+    {
+      "name": "tru",
+      "host": "localhost",
+      "type": "local",
+      "description": "texasrepublicansunited.com"
+    },
+    {
+      "name": "agents",
+      "host": "localhost",
+      "type": "local",
+      "description": "Agents orchestration"
+    },
+    {
+      "name": "obsidian",
+      "host": "localhost",
+      "type": "local",
+      "description": "Obsidian vault automation"
+    }
+  ],
+  "layout": {
+    "columns": 4,
+    "show_status_bar": true
+  },
+  "status_file": "/tmp/dashboard-status.json"
+}
