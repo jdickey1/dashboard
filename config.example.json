@@ -1,0 +1,39 @@
+{
+  "sessions": [
+    {
+      "name": "mini1",
+      "host": "macmini",
+      "type": "remote",
+      "description": "Mac Mini Claude instance 1"
+    },
+    {
+      "name": "mini2",
+      "host": "macmini",
+      "type": "remote",
+      "description": "Mac Mini Claude instance 2"
+    },
+    {
+      "name": "jdkey",
+      "host": "localhost",
+      "type": "local",
+      "description": "jdkey.com project"
+    },
+    {
+      "name": "agents",
+      "host": "localhost",
+      "type": "local",
+      "description": "Agents project"
+    },
+    {
+      "name": "obsidian",
+      "host": "localhost",
+      "type": "local",
+      "description": "Obsidian vault automation"
+    }
+  ],
+  "layout": {
+    "columns": 3,
+    "show_status_bar": true
+  },
+  "status_file": "/tmp/dashboard-status.json"
+}

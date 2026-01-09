@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "command": "$DASHBOARD_HOOKS_DIR/on-prompt-submit.sh"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "command": "$DASHBOARD_HOOKS_DIR/on-stop.sh"
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "waiting",
+        "command": "$DASHBOARD_HOOKS_DIR/on-waiting.sh"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "command": "$DASHBOARD_HOOKS_DIR/on-waiting.sh"
+      }
+    ]
+  }
+}
