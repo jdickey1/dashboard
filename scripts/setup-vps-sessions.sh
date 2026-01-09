@@ -1,24 +1,27 @@
 #!/bin/bash
 #
-# Create tmux sessions for Claude Code projects
+# Create tmux sessions for all VPS projects
 #
 # Usage: ./setup-vps-sessions.sh
-#
-# Customize the SESSIONS array below with your own projects.
 #
 
 set -e
 
-echo "Creating Claude Code tmux sessions..."
+echo "Creating VPS tmux sessions..."
 
-# Define sessions with their working directories
-# Format: ["session-name"]="/path/to/project"
-#
-# Example configuration - customize for your setup:
+# Define sessions with their working directories (alphabetical order)
 declare -A SESSIONS=(
-    ["claude-project1"]="$HOME/projects/project1"
-    ["claude-project2"]="$HOME/projects/project2"
-    ["claude-admin"]="$HOME"
+    ["claude-agents"]="/home/agents/app"
+    ["claude-jdkey"]="/home/jdkey/app"
+    ["claude-link"]="/home/link/apps/web"
+    ["claude-nonrootadmin"]="/home/nonrootadmin"
+    ["claude-obsidian"]="/home/obsidian"
+    ["claude-planter"]="/home/planter/app"
+    ["claude-podstyle"]="/home/podstyle/apps/web"
+    ["claude-sharper"]="/home/sharper/app"
+    ["claude-tru"]="/home/tru/apps/web"
+    ["claude-vidpub"]="/home/vidpub/apps/web"
+    ["claude-winning"]="/home/winning/app"
 )
 
 # Sort keys alphabetically
