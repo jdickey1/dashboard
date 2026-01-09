@@ -112,14 +112,14 @@ for ((page=0; page<TOTAL_PAGES; page++)); do
         TYPE=$(jq -r ".sessions[$idx].type" "$CONFIG_FILE")
         CMD=$(get_attach_cmd "$NAME" "$HOST" "$TYPE")
 
-        # Split horizontally (stacked vertically)
-        tmux split-window -t "$SESSION_NAME:$window_num" -v "$CMD"
+        # Split vertically (side by side)
+        tmux split-window -t "$SESSION_NAME:$window_num" -h "$CMD"
         pane_num=$((PANE_BASE + j))
         tmux select-pane -t "$SESSION_NAME:$window_num.$pane_num" -T "$NAME" 2>/dev/null || true
     done
 
-    # Make panes even height
-    tmux select-layout -t "$SESSION_NAME:$window_num" even-vertical
+    # Make panes even width
+    tmux select-layout -t "$SESSION_NAME:$window_num" even-horizontal
 
     # Enable pane titles for this window
     tmux set-option -t "$SESSION_NAME:$window_num" pane-border-status top 2>/dev/null || true
