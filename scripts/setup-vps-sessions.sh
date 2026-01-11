@@ -12,16 +12,23 @@ echo "Creating VPS tmux sessions..."
 # Define sessions with their working directories (alphabetical order)
 declare -A SESSIONS=(
     ["claude-agents"]="/home/agents/app"
+    ["claude-bni"]="/home/bni/app"
+    ["claude-calwu"]="/home/calwu"
+    ["claude-hyperscale"]="/home/hyperscale"
     ["claude-jdkey"]="/home/jdkey/app"
     ["claude-link"]="/home/link/apps/web"
+    ["claude-n8n"]="/home/n8n"
     ["claude-nonrootadmin"]="/home/nonrootadmin"
     ["claude-obsidian"]="/home/obsidian"
     ["claude-planter"]="/home/planter/app"
     ["claude-podstyle"]="/home/podstyle/apps/web"
     ["claude-sharper"]="/home/sharper/app"
     ["claude-tru"]="/home/tru/apps/web"
+    ["claude-txgovjobs"]="/home/txgovjobs/app"
+    ["claude-txlege"]="/home/txlege"
     ["claude-vidpub"]="/home/vidpub/apps/web"
     ["claude-winning"]="/home/winning/app"
+    ["claude-workflow"]="/home/workflow"
 )
 
 # Sort keys alphabetically
