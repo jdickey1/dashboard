@@ -4,10 +4,10 @@
 # Displays a grid of all sessions with color-coded status
 #
 # Status colors:
-#   🟢 Green  = Working (actively processing)
-#   🟡 Yellow = Waiting (needs user input)
-#   🔴 Red    = Error
-#   ⚪ Grey   = Idle (ready/done)
+#   Green  = Working (actively processing)
+#   Yellow = Waiting (needs user input)
+#   Red    = Error
+#   Grey   = Idle (ready/done)
 #
 
 CONFIG_FILE="${1:-/home/dashboard/app/config.json}"
@@ -23,14 +23,17 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-# Box drawing characters
-TL='┌' TR='┐' BL='└' BR='┘' H='─' V='│'
+# Get terminal size
+TERM_COLS=$(tput cols 2>/dev/null || echo 80)
+TERM_ROWS=$(tput lines 2>/dev/null || echo 24)
 
-# Grid settings
-COLS=4
-BOX_WIDTH=12
+# Calculate grid - each box is ~14 chars wide (10 + borders + spacing)
+BOX_WIDTH=14
+COLS=$(( (TERM_COLS - 4) / BOX_WIDTH ))
+[[ $COLS -lt 1 ]] && COLS=1
+[[ $COLS -gt 6 ]] && COLS=6
 
-# Clear screen and move cursor to top
+# Clear screen
 clear
 
 # Get sessions from config
@@ -51,31 +54,10 @@ if [[ -f "$STATUS_FILE" ]]; then
     done < <(jq -r 'to_entries[] | "\(.key)=\(.value.status)"' "$STATUS_FILE" 2>/dev/null)
 fi
 
-# Function to get status color and icon
-get_status_display() {
+# Function to get status color
+get_status_color() {
     local session="$1"
     local status="${STATUSES[$session]:-idle}"
-
-    case "$status" in
-        working)
-            echo -e "${GREEN}●${RESET}"
-            ;;
-        waiting)
-            echo -e "${YELLOW}●${RESET}"
-            ;;
-        error)
-            echo -e "${RED}●${RESET}"
-            ;;
-        *)
-            echo -e "${GREY}●${RESET}"
-            ;;
-    esac
-}
-
-get_status_bg() {
-    local session="$1"
-    local status="${STATUSES[$session]:-idle}"
-
     case "$status" in
         working) echo -e "${GREEN}" ;;
         waiting) echo -e "${YELLOW}" ;;
@@ -86,11 +68,8 @@ get_status_bg() {
 
 # Print header
 echo -e "${CYAN}${BOLD}"
-echo "  ╔═══════════════════════════════════════════════════════╗"
-echo "  ║           MISSION CONTROL - STATUS OVERVIEW           ║"
-echo "  ╚═══════════════════════════════════════════════════════╝"
+echo "  MISSION CONTROL"
 echo -e "${RESET}"
-echo ""
 
 # Count statuses
 working=0 waiting=0 error=0 idle=0
@@ -107,66 +86,23 @@ done
 # Print grid
 idx=0
 for ((row=0; row<ROWS; row++)); do
-    # Top border of boxes
-    echo -n "    "
-    for ((col=0; col<COLS; col++)); do
-        if [[ $idx -lt $TOTAL ]]; then
-            echo -n "${TL}${H}${H}${H}${H}${H}${H}${H}${H}${H}${H}${TR}  "
-        fi
-        ((idx++))
-    done
-    echo ""
-
-    # Reset idx for content row
-    idx=$((row * COLS))
-
-    # Status icon row
-    echo -n "    "
+    # Status line with name
+    echo -n "  "
     for ((col=0; col<COLS; col++)); do
         if [[ $idx -lt $TOTAL ]]; then
             session="${SESSIONS[$idx]}"
-            status_icon=$(get_status_display "$session")
-            echo -n "${V}    ${status_icon}     ${V}  "
+            color=$(get_status_color "$session")
+            # Remove claude- prefix and truncate to 10 chars
+            short_name=$(echo "$session" | sed 's/^claude-//' | cut -c1-10)
+            printf "${color}%-10s${RESET}  " "$short_name"
         fi
         ((idx++))
     done
-    echo ""
-
-    # Reset idx for name row
-    idx=$((row * COLS))
-
-    # Session name row
-    echo -n "    "
-    for ((col=0; col<COLS; col++)); do
-        if [[ $idx -lt $TOTAL ]]; then
-            session="${SESSIONS[$idx]}"
-            # Truncate/pad name to 8 chars, remove claude- prefix
-            short_name=$(echo "$session" | sed 's/^claude-//' | cut -c1-8)
-            printf "${V} %-8s ${V}  " "$short_name"
-        fi
-        ((idx++))
-    done
-    echo ""
-
-    # Reset idx for bottom border
-    idx=$((row * COLS))
-
-    # Bottom border of boxes
-    echo -n "    "
-    for ((col=0; col<COLS; col++)); do
-        if [[ $idx -lt $TOTAL ]]; then
-            echo -n "${BL}${H}${H}${H}${H}${H}${H}${H}${H}${H}${H}${BR}  "
-        fi
-        ((idx++))
-    done
-    echo ""
     echo ""
 done
 
 # Print legend
 echo ""
-echo -e "    ${GREEN}●${RESET} Working ($working)   ${YELLOW}●${RESET} Waiting ($waiting)   ${RED}●${RESET} Error ($error)   ${GREY}●${RESET} Idle ($idle)"
+echo -e "  ${GREEN}■${RESET} Working:$working  ${YELLOW}■${RESET} Waiting:$waiting  ${RED}■${RESET} Error:$error  ${GREY}■${RESET} Idle:$idle"
 echo ""
-echo -e "    ${GREY}Press ${WHITE}Ctrl-b n${GREY} for session pages${RESET}"
-echo ""
-echo -e "    ${GREY}Last update: $(date '+%H:%M:%S')${RESET}"
+echo -e "  ${GREY}$(date '+%H:%M:%S') | Ctrl-b n: sessions${RESET}"

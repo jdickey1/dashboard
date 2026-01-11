@@ -17,7 +17,22 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${1:-$SCRIPT_DIR/../config.json}"
 SESSION_NAME="mission-control"
-PANES_PER_PAGE=3
+# Auto-detect terminal width and calculate panes per page
+# Each pane needs ~65 columns minimum to be usable for Claude Code
+TERM_WIDTH=$(tput cols 2>/dev/null || echo 120)
+MIN_PANE_WIDTH=65
+
+if [[ $TERM_WIDTH -ge $((MIN_PANE_WIDTH * 4)) ]]; then
+    PANES_PER_PAGE=4
+elif [[ $TERM_WIDTH -ge $((MIN_PANE_WIDTH * 3)) ]]; then
+    PANES_PER_PAGE=3
+elif [[ $TERM_WIDTH -ge $((MIN_PANE_WIDTH * 2)) ]]; then
+    PANES_PER_PAGE=2
+else
+    PANES_PER_PAGE=1
+fi
+
+echo "Terminal width: ${TERM_WIDTH} columns → using $PANES_PER_PAGE panes per page"
 
 # Check dependencies
 command -v tmux >/dev/null 2>&1 || { echo "tmux is required but not installed."; exit 1; }
@@ -38,10 +53,11 @@ if [[ "$TOTAL_SESSIONS" -eq 0 ]]; then
     exit 1
 fi
 
-# Calculate pages
-TOTAL_PAGES=$(( (TOTAL_SESSIONS + PANES_PER_PAGE - 1) / PANES_PER_PAGE ))
+# Calculate pages (add 1 for overview page)
+SESSION_PAGES=$(( (TOTAL_SESSIONS + PANES_PER_PAGE - 1) / PANES_PER_PAGE ))
+TOTAL_PAGES=$((SESSION_PAGES + 1))
 
-echo "Starting Mission Control: $TOTAL_SESSIONS sessions across $TOTAL_PAGES pages ($PANES_PER_PAGE per page)"
+echo "Starting Mission Control: $TOTAL_SESSIONS sessions across $TOTAL_PAGES pages (overview + $SESSION_PAGES session pages)"
 
 # Kill existing mission control session if it exists
 tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
@@ -61,17 +77,24 @@ get_attach_cmd() {
 }
 
 # Ensure tmux server is running (loads config) before querying options
-# This prevents BASE_INDEX=0 fallback when no server exists after kill-server
 tmux start-server 2>/dev/null || true
 
 # Get tmux base-index (windows and panes start at this number)
 BASE_INDEX=$(tmux show-option -gv base-index 2>/dev/null || echo "0")
 PANE_BASE=$(tmux show-option -gv pane-base-index 2>/dev/null || echo "0")
 
-# Create pages (windows) with 3 panes each
-for ((page=0; page<TOTAL_PAGES; page++)); do
+# Create session with overview page first
+OVERVIEW_CMD="watch -t -n 2 -c $SCRIPT_DIR/status-overview.sh"
+tmux new-session -d -s "$SESSION_NAME" -x 200 -y 50 -n "[Overview]" "$OVERVIEW_CMD"
+
+# Force session size for detached session (works around nested tmux constraints)
+tmux set-option -t "$SESSION_NAME" window-size manual 2>/dev/null || true
+tmux resize-window -t "$SESSION_NAME" -x 200 -y 50 2>/dev/null || true
+
+# Create session pages (windows) with 3 panes each
+for ((page=0; page<SESSION_PAGES; page++)); do
     start_idx=$((page * PANES_PER_PAGE))
-    window_num=$((page + BASE_INDEX))
+    window_num=$((page + BASE_INDEX + 1))  # +1 because overview is first
 
     # Get sessions for this page
     sessions_on_page=()
@@ -96,15 +119,10 @@ for ((page=0; page<TOTAL_PAGES; page++)); do
         short_name=$(echo "$name" | sed 's/claude-//' | cut -c1-8)
         window_names+="${short_name} "
     done
-    window_name="[$((page+1))/$TOTAL_PAGES] ${window_names}"
+    window_name="[$((page+2))/$TOTAL_PAGES] ${window_names}"
 
-    if [[ $page -eq 0 ]]; then
-        # Create session with first window
-        tmux new-session -d -s "$SESSION_NAME" -x 200 -y 50 -n "$window_name" "$FIRST_CMD"
-    else
-        # Create new window
-        tmux new-window -t "$SESSION_NAME" -n "$window_name" "$FIRST_CMD"
-    fi
+    # Create new window for this page
+    tmux new-window -t "$SESSION_NAME" -n "$window_name" "$FIRST_CMD"
 
     # Set first pane title
     tmux select-pane -t "$SESSION_NAME:$window_num.$PANE_BASE" -T "$FIRST_NAME" 2>/dev/null || true
@@ -144,7 +162,7 @@ tmux set-option -t "$SESSION_NAME" status-left-length 20
 tmux set-option -t "$SESSION_NAME" status-right "#[fg=green]Ctrl-b n/p: pages #[fg=white]| %H:%M "
 tmux set-option -t "$SESSION_NAME" status-right-length 40
 
-# Select first window and pane
+# Select first window (overview) and pane
 tmux select-window -t "$SESSION_NAME:$BASE_INDEX"
 tmux select-pane -t "$SESSION_NAME:$BASE_INDEX.$PANE_BASE"
 
